@@ -18,15 +18,15 @@ A collection of repos that runs a WebAssembly Component Model runtime (Wasmtime 
 
 <br>
 
-## embedded-wasm-uart
+## embedded-wasm-uart-rp2350
 A pure Embedded Rust UART echo project that runs a WebAssembly Component Model runtime (Wasmtime + Pulley interpreter) directly on the RP2350 bare-metal w/ HW capabilities exposed through WIT.
 
--> Click [HERE](https://github.com/mytechnotalent/embedded-wasm-uart) to access the repo.
+-> Click [HERE](https://github.com/mytechnotalent/embedded-wasm-uart-rp2350) to access the repo.
 
-## embedded-wasm-blinky
+## embedded-wasm-blinky-rp2350
 A pure Embedded Rust blinky project that runs a WebAssembly Component Model runtime (Wasmtime + Pulley interpreter) directly on the RP2350 bare-metal w/ HW capabilities exposed through WIT.
 
--> Click [HERE](https://github.com/mytechnotalent/embedded-wasm-blinky) to access the repo.
+-> Click [HERE](https://github.com/mytechnotalent/embedded-wasm-blinky-rp2350) to access the repo.
 
 <br>
 
