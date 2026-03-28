@@ -1,6 +1,6 @@
 # Embedded Wasm 
 
-> See also: [Reverse Engineering](https://github.com/mytechnotalent/Reverse-Engineering) — A FREE comprehensive step-by-step embedded hacking course covering Embedded Software Development to Reverse Engineering.
+> See also: [Embedded Hacking](https://github.com/mytechnotalent/EmbeddedHacking) — A FREE comprehensive step-by-step embedded hacking course covering Embedded Software Development to Reverse Engineering.
 
 A collection of repos that runs a WebAssembly Component Model runtime (Wasmtime + Pulley interpreter) directly on the RP2350 bare-metal w/ HW capabilities exposed through WIT.
 
