@@ -1,6 +1,6 @@
-# Embedded WASM 
+# Embedded Wasm 
 
-> See also: [Reverse Engineering](https://github.com/mytechnotalent/Reverse-Engineering) — a free tutorial covering x86, x64, 32-bit/64-bit ARM, 8-bit AVR and 32-bit RISC-V architectures.
+> See also: [Reverse Engineering](https://github.com/mytechnotalent/Reverse-Engineering) — A FREE comprehensive step-by-step embedded hacking course covering Embedded Software Development to Reverse Engineering.
 
 A collection of repos that runs a WebAssembly Component Model runtime (Wasmtime + Pulley interpreter) directly on the RP2350 bare-metal w/ HW capabilities exposed through WIT.
 
