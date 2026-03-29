@@ -6,6 +6,24 @@ A collection of repos that runs a WebAssembly Component Model runtime (wasmtime 
 
 <br>
 
+## Why Run WASM on a Microcontroller?
+
+A traditional embedded project compiles C or Rust directly to ARM machine code, flashes it, and runs it. It is simple, fast, and uses minimal RAM. So why add a WebAssembly runtime to a device with 512 KiB of memory?
+
+**Sandboxing.** The WASM guest runs inside a sandbox enforced by Wasmtime. It cannot access arbitrary memory, call arbitrary functions, or touch hardware directly. Every interaction with the outside world goes through a WIT-defined interface that the host explicitly implements. A bug or exploit in the guest cannot corrupt the host firmware, overwrite stack frames, or hijack peripherals. On a traditional bare-metal C binary, a single buffer overflow in application logic can take over the entire device.
+
+**Portable application logic.** The WASM component is compiled once to `wasm32-unknown-unknown` and runs on any host that implements the same WIT interface. The same blinky guest that runs on an RP2350 through Pulley could run on an ESP32, an STM32, or a Linux desktop — without recompilation. The hardware-specific code lives in the host firmware; the application logic is platform-independent.
+
+**Separation of concerns.** The WIT interface creates a hard contract between the application developer and the firmware developer. The application developer writes guest code against `gpio.set-high(pin: u32)` and `timing.delay-ms(ms: u32)` without knowing or caring how GPIO or timing work on the target hardware. The firmware developer implements those interfaces against the HAL. Either side can be updated, replaced, or audited independently.
+
+**Safe over-the-air updates.** Because the WASM component is sandboxed and interface-bound, you could update the guest application without reflashing the entire firmware. A new `.cwasm` blob can be loaded from flash, UART, or a network interface, deserialized by the existing Wasmtime engine, and executed — with the guarantee that it can only do what the WIT interface allows. A corrupted or malicious update cannot escape the sandbox.
+
+**Language flexibility.** Any language that compiles to WASM can produce a guest component — Rust, C, C++, TinyGo, AssemblyScript, or Zig. The host firmware does not need to change. This means a team can write performance-critical drivers in Rust and application logic in whatever language fits their workflow, all communicating through typed WIT interfaces.
+
+**The tradeoff is RAM.** The Wasmtime runtime, Pulley interpreter, and guest linear memory consume approximately 300 KiB of the RP2350's 512 KiB. A native C blinky uses roughly 4 KiB. You are paying for isolation, portability, and a well-defined security boundary. On devices where those properties matter — updatable field devices, multi-tenant firmware, safety-critical systems — the RAM cost is worth it. On a throwaway prototype that blinks an LED, it is not.
+
+<br>
+
 ## How It All Fits Together
 
 Every repo in this collection shares the same architecture: a bare-metal Rust firmware that boots an RP2350 microcontroller, compiles a WebAssembly component ahead of time, and executes it through the Wasmtime runtime's Pulley interpreter. The WASM guest calls back into the host for hardware access (GPIO, UART, timers) through interfaces defined in WIT.
@@ -287,13 +305,13 @@ The natural question when running WebAssembly on a microcontroller is: how much 
 
 **Per-cycle overhead comparison (blinky example at 150 MHz):**
 
-| Operation | Native C/Rust | This Project |
-|---|---|---|
-| GPIO register write | ~10 ns | ~10 ns (same register write, from host) + ~5 µs (Pulley call overhead) |
-| 500 ms delay | 500 ms (busy wait) | 500 ms (same busy wait, in host) |
-| Total per-cycle overhead | 0 | ~10 µs |
-| Full cycle time | ~1000 ms | ~1000.01 ms |
-| Overhead percentage | 0% | ~0.001% |
+| Operation                | Native C/Rust      | This Project                                                           |
+| ------------------------ | ------------------ | ---------------------------------------------------------------------- |
+| GPIO register write      | ~10 ns             | ~10 ns (same register write, from host) + ~5 µs (Pulley call overhead) |
+| 500 ms delay             | 500 ms (busy wait) | 500 ms (same busy wait, in host)                                       |
+| Total per-cycle overhead | 0                  | ~10 µs                                                                 |
+| Full cycle time          | ~1000 ms           | ~1000.01 ms                                                            |
+| Overhead percentage      | 0%                 | ~0.001%                                                                |
 
 **When WASM overhead would matter:** If the WASM guest performed heavy computation inside the Pulley interpreter — math, sorting, string processing, data transformation — you would see 20-50x slowdown compared to native code, which is typical for a well-optimized bytecode interpreter. This project deliberately avoids that by keeping all computation and hardware I/O in the native host firmware. The guest is a thin orchestration layer that sequences hardware calls through WIT imports.
 
