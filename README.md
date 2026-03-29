@@ -251,6 +251,32 @@ To reverse engineer a `.cwasm`, you would need to work through four layers:
 
 **In practice:** If you want to analyze what the WASM guest is doing, inspect the `.wasm` (Artifact 1) with `wasm-tools print` — it contains the same logic in a standard, well-documented format. The `.cwasm` adds nothing semantically; it is a pre-compiled representation of the same code optimized for instant loading on the target device.
 
+### Embedded WASM Memory Challenges and How This Project Solves Them
+
+Running WebAssembly on a microcontroller with 512 KiB of RAM and no MMU introduces memory challenges that do not exist on desktop or server targets. These are well-known pain points in the embedded WASM space, and this project's architecture is specifically designed to avoid them.
+
+**Challenge 1: 64 KiB WASM page size vs. limited RAM.**
+The WebAssembly specification defines a fixed page size of 64 KiB. On a device with 512 KiB of total RAM, a single `memory.grow` adds 64 KiB — over 12% of all available memory. Projects that pass strings, byte buffers, or lists across the WIT boundary trigger `cabi_realloc` inside the guest, which calls `memory.grow` to obtain heap space. Two pages of linear memory alone consume 128 KiB.
+
+**How we avoid it:** All WIT interfaces in this project pass only `u32` scalars — `set-high(pin: u32)`, `delay-ms(ms: u32)`, `is-pressed(pin: u32) -> bool`. The canonical ABI does not need heap allocation to marshal a single integer across the boundary. The guest's initial linear memory (1 page = 64 KiB) is sufficient for its static data and stack, and `memory.grow` is never invoked. Page size is irrelevant when memory never grows.
+
+**Challenge 2: Forced `memory.grow` from the guest allocator.**
+Compiling to `wasm32-unknown-unknown` produces a guest where the default allocator treats all initial memory as the WASM image. It immediately calls `memory.grow` to obtain heap space, forcing a minimum of 2 pages (128 KiB) for any component that performs dynamic allocation. The `#[global_allocator]` is required because `wit-bindgen` emits a `cabi_realloc` symbol that the linker demands.
+
+**How we avoid it:** Our guests declare a `#[global_allocator]` (satisfying the linker) but never actually allocate. The blinky guest, for example, is an infinite loop of `set_high` / `delay_ms` / `set_low` / `delay_ms` — all stack-based, zero heap allocations. The allocator exists as dead code because our scalar-only WIT types never trigger `cabi_realloc` at runtime.
+
+**Challenge 3: No-MMU reallocation overhead.**
+Without virtual memory, linear memory must be physically contiguous. Growing from 1 to 2 pages requires the host to allocate 2 new contiguous pages, copy the original page, and free the old block — temporarily requiring 3 pages (192 KiB) of contiguous RAM for what ends up as a 2-page allocation.
+
+**How we avoid it:** Since our guests stay within the initial 64 KiB page, the realloc-copy-free cycle never triggers. The engine configuration reinforces this: `memory_reservation(0)`, `memory_guard_size(0)`, `memory_reservation_for_growth(0)`, and `guard_before_linear_memory(false)` tell Wasmtime not to reserve any address space beyond what is immediately needed.
+
+**Challenge 4: Multi-component memory multiplication.**
+When composing multiple WASM components (e.g., a sensor driver, a display driver, and application logic as separate components), each retains its own isolated linear memory. The page-size overhead and `memory.grow` penalties described above multiply for every sub-component, quickly exhausting available RAM.
+
+**How we avoid it:** Each repo in this collection runs exactly one WASM component with one linear memory. There is no multi-component composition. All hardware complexity lives in the host firmware (Rust), and the single WASM guest is deliberately lightweight — it orchestrates hardware calls through WIT imports but performs no complex data processing itself.
+
+**The design principle:** Keep the WASM guest trivial and the WIT boundary scalar-only. All complexity — hardware drivers, UART I/O, clock configuration, pin management — lives in the host firmware where it has direct access to hardware and unconstrained memory. The WASM layer provides sandboxing and portability for the application logic without paying the memory tax that comes with passing rich data types across the component boundary.
+
 <br>
 
 ## Repos
