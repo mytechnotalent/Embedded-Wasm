@@ -118,7 +118,7 @@ The `ComponentEncoder` is the library version of `wasm-tools component new`. Usi
 
 # Then inspect the component
 wasm-tools print component.wasm
-wasm-tools component wit component.wasm    # extract the WIT back out
+wasm-tools component wit component.wasm # extract the WIT back out
 wasm-tools validate --features component-model component.wasm
 ```
 
