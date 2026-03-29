@@ -6,7 +6,7 @@ A collection of repos that runs a WebAssembly Component Model runtime (wasmtime 
 
 <br>
 
-## Why Run WASM on a Microcontroller?
+## Why Run Wasm on a Microcontroller?
 
 A traditional embedded project compiles C or Rust directly to ARM machine code, flashes it, and runs it. It is simple, fast, and uses minimal RAM. So why add a WebAssembly runtime to a device with 512 KiB of memory?
 
