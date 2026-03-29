@@ -235,6 +235,22 @@ cargo install wasm-tools
 | `wasm-tools component new core.wasm -o component.wasm` | Manually encode a core module as a component (what `ComponentEncoder` does) |
 | `wasm-tools stats <file>.wasm`                         | Show size breakdown by section                                              |
 
+### Reverse Engineering `.cwasm` Files
+
+The `.cwasm` format is Wasmtime's internal serialization — undocumented, version-specific, and changes between Wasmtime releases without notice. There is no off-the-shelf disassembler or inspection tool. `wasm-tools` cannot read `.cwasm` files because they are not standard WASM.
+
+To reverse engineer a `.cwasm`, you would need to work through four layers:
+
+**1. Parse the header.** The file starts with the magic bytes `\0wasmtime.cwasm`, followed by version information and a hash of the engine configuration flags. This is how `Engine::deserialize()` detects config mismatches — if any flag differs between the engine that compiled the blob and the engine trying to load it, deserialization fails immediately. The header format lives in Wasmtime's source at [`crates/wasmtime/src/runtime/module/serialization.rs`](https://github.com/bytecodealliance/wasmtime/blob/main/crates/wasmtime/src/runtime/module/serialization.rs).
+
+**2. Deserialize the metadata.** After the header, the file contains `bincode`-serialized metadata: function signatures, memory layout, trap tables, component type information, and canonical ABI adapter descriptions. Deserializing this requires matching the exact `bincode` schema from the same Wasmtime version that produced the file. A version mismatch will produce garbage or deserialization errors.
+
+**3. Extract the Pulley bytecode.** The compiled code sections contain raw Pulley interpreter instructions — a stack-based bytecode format designed for portability across architectures. There is no standalone CLI disassembler for Pulley. To decode the instructions, you would write a small Rust program using the [`pulley-interpreter`](https://docs.rs/pulley-interpreter) crate's `Decoder` API, which can step through the bytecode opcode-by-opcode and print each instruction.
+
+**4. Map back to source.** The `.cwasm` does not contain DWARF debug info or source maps. To understand what a Pulley function does, cross-reference it by function index against the original `.wasm` file (Artifact 1), which you can disassemble with `wasm-tools print`. The `.cwasm` preserves the same function indices, so function 0 in the `.cwasm` corresponds to function 0 in the `.wasm`.
+
+**In practice:** If you want to analyze what the WASM guest is doing, inspect the `.wasm` (Artifact 1) with `wasm-tools print` — it contains the same logic in a standard, well-documented format. The `.cwasm` adds nothing semantically; it is a pre-compiled representation of the same code optimized for instant loading on the target device.
+
 <br>
 
 ## Repos
