@@ -190,7 +190,7 @@ When you run `cargo build`, Cargo executes `build.rs` on the host machine before
 
 1. **Write linker script** — copies `rp2350.x` (the RP2350 memory layout: Flash at `0x10000000`, RAM at `0x20000000`) into `$OUT_DIR/memory.x` so `cortex-m-rt` knows where to place code and data
 
-2. **Compile WASM guest** — spawns `cargo build --release --target wasm32-unknown-unknown` inside `wasm-app/`. Rust compiles the guest code + `wit-bindgen` stubs into a core WASM module (Artifact 1)
+2. **Compile WASM guest** — spawns `cargo build --release --target wasm32-unknown-unknown` inside `wasm-app/` as Rust compiles the guest code + `wit-bindgen` stubs into a core WASM module (Artifact 1)
 
 3. **Encode as component** — `ComponentEncoder` from `wit-component` wraps the core module into a Component Model component (Artifact 2, in-memory only)
 
@@ -222,7 +222,7 @@ On power-up, the RP2350's Boot ROM reads the image definition from the `.start_b
 
 `run_wasm()` sets up and executes the WASM component:
 1. `create_engine()` — creates a Wasmtime `Engine` with the same `pulley32` configuration used at build time
-2. `Engine::deserialize()` — loads the precompiled `.cwasm` bytes (the `WASM_BINARY` constant) back into a `Component`. No compilation happens here — the bytecode is ready to execute
+2. `Engine::deserialize()` — loads the precompiled `.cwasm` bytes (the `WASM_BINARY` constant) back into a `Component` as no compilation happens here — the bytecode is ready to execute
 3. `build_linker()` — creates a `Linker` and registers host implementations for every WIT import (`gpio.set-high`, `gpio.set-low`, `timing.delay-ms`)
 4. `execute_wasm()` — creates a `Store` (which holds the host state), instantiates the component through the linker, and calls the guest's exported `run()` function
 
