@@ -1,15 +1,3 @@
-## FREE Reverse Engineering Self-Study Course [HERE](https://github.com/mytechnotalent/Reverse-Engineering-Tutorial)
-
-<br>
-
-# Today's Tutorial [March 28, 2026]
-## Lesson 142: x64 Course (Part 22 - Boot Sector Basics [Part 5])
-This tutorial will discuss more boot sector basics.
-
--> Click [HERE](https://0xinfection.github.io/reversing) to read the FREE ebook.
-
-<br>
-
 # Embedded Wasm 
 
 > See also: [Embedded Hacking](https://github.com/mytechnotalent/Embedded-Hacking) — A FREE comprehensive step-by-step embedded hacking course covering Embedded Software Development to Reverse Engineering.
