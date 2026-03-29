@@ -64,6 +64,31 @@ These crates compile, encode, and execute WebAssembly components on the microcon
 
 - **[embedded-alloc](https://docs.rs/embedded-alloc)** — A heap allocator for `no_std` environments. Wasmtime needs heap allocation for its `Store`, `Engine`, and component instantiation. The firmware carves out a fixed-size heap from RAM and registers this allocator as the `#[global_allocator]`.
 
+### The Wasm Build Pipeline
+
+Before diving into this project's specific artifacts, it helps to understand how source code becomes WebAssembly in general. The pipeline mirrors a traditional native build — preprocessing, compiling, assembling, linking — but the target is a portable bytecode format instead of a specific CPU's instruction set.
+
+**1. Preprocessing and Compiling.** Your toolchain (Clang/LLVM for C/C++, `rustc` for Rust) reads source code and translates it into WebAssembly instructions instead of ARM or x86 machine code. The compiler front-end works the same way it always does — parsing, type checking, optimization — but the back-end emits Wasm opcodes (`i32.add`, `call`, `local.get`, etc.) rather than native instructions.
+
+**2. Assembling (WAT to Wasm).** WebAssembly has its own human-readable assembly language called WAT (WebAssembly Text format). WAT uses nested S-expressions — parenthesized prefix notation that looks similar to Lisp. For example, a function that adds two integers:
+
+```wat
+(func $add (param $a i32) (param $b i32) (result i32)
+  local.get $a
+  local.get $b
+  i32.add)
+```
+
+The assembler takes WAT instructions and encodes them into the compact binary format: a `.wasm` file. This `.wasm` file is the Wasm equivalent of a native object file (`.o`) or standalone executable. In practice, compilers like `rustc` emit the binary `.wasm` directly — you only see WAT when you disassemble with `wasm-tools print`.
+
+**3. Linking.** This is where Wasm diverges from native builds. There are two fundamentally different kinds of linking:
+
+- **Static linking (building a module).** If your project is made of multiple source files, the Wasm linker (`wasm-ld`) takes the individual object files and links them together into a single `.wasm` module — just like a native linker produces a single ELF or PE binary. The result is one self-contained module with all internal references resolved.
+
+- **Component linking (composing modules).** This is the Component Model's contribution. When you want to connect two independently compiled Wasm modules — say a `checkout.wasm` that calls a `pdf.wasm` — you are taking two fully built, complete binary modules and wiring their typed imports and exports together through WIT interfaces. Each module retains its own isolated linear memory and internal state. The connection happens at the interface boundary, not by merging code. This is fundamentally different from native static linking, where everything collapses into one address space.
+
+In this project, the guest (`wasm-app/`) is statically linked into a single core `.wasm` module (Artifact 1 below), then component-encoded with WIT type information (Artifact 2), and finally AOT-compiled to Pulley bytecode (Artifact 3). The component linking between host and guest happens at runtime when Wasmtime's `Linker` wires the host's Rust implementations to the guest's WIT imports.
+
 ### The Wasm Compilation Pipeline
 
 The build produces three distinct Wasm artifacts. Each one is a transformation of the previous, and understanding all three is essential to understanding how code written in Rust ends up executing on a microcontroller through a WebAssembly runtime.
