@@ -22,7 +22,7 @@ These crates give the firmware direct access to the RP2350's Cortex-M33 core and
 
 - **[rp235x-hal](https://docs.rs/rp235x-hal)** — The RP2350 Hardware Abstraction Layer. It wraps the chip's raw registers into safe Rust types for clocks, GPIO pins, UART peripherals, and more. Every hardware operation — toggling an LED, reading a button, sending a UART byte — goes through this crate.
 
-- **[embedded-hal](https://docs.rs/embedded-hal)** — A set of traits that define portable hardware interfaces (GPIO, UART, SPI, I2C). The firmware codes against these traits so the same logic works across different HALs. `rp235x-hal` implements these traits for the RP2350.
+- **[embedded-hal](https://docs.rs/embedded-hal)** — A set of traits that define portable hardware interfaces (GPIO, UART, SPI, I2C). The firmware codes against these traits so the same logic works across different HALs as the `rp235x-hal` implements these traits for the RP2350.
 
 - **[fugit](https://docs.rs/fugit)** — Type-safe time units for embedded systems. Baud rates (`115_200.Hz()`) and clock frequencies (`150.MHz()`) are expressed as `fugit` types, catching unit mismatches at compile time.
 
