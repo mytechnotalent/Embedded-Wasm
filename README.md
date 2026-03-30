@@ -365,6 +365,11 @@ A pure Embedded Rust button project that runs a WebAssembly Component Model runt
 
 -> Click [HERE](https://github.com/mytechnotalent/embedded-wasm-button-rp2350) to access the repo.
 
+## embedded-wasm-servo-rp2350
+A pure Embedded Rust servo project that runs a WebAssembly Component Model runtime (Wasmtime + Pulley interpreter) directly on the RP2350 bare-metal with hardware capabilities exposed through WIT.
+
+-> Click [HERE](https://github.com/mytechnotalent/embedded-wasm-servo-rp2350) to access the repo.
+
 <br>
 
 ## License
